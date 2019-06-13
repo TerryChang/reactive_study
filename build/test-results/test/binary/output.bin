@@ -1,0 +1,12 @@
+onSubscribe
+
+onNext 1
+
+onNext 2
+
+onNext 3
+
+onNext 4
+
+onNext 5
+onComplete
