@@ -1,6 +1,7 @@
 package com.terry.reactive.test;
 
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -344,6 +345,43 @@ public class PubSub02 {
         logger.debug("onComplete");
       }
       
+    };
+  }
+
+  // 1,2,3,4,5 가 넘어올때
+  // 초기값을 0을 주고 각각의 값을 더하며 그 더한 결과값과 다음값을 더해서 최종 결과를 return하는 방식이다
+  // 0 -> (0, 1) -> 0 + 1 ==> 1
+  // 1 -> (1, 2) -> 1 + 2 ==> 3
+  // 3 -> (3, 3) -> 3 + 3 ==> 6
+  // 6 -> (6, 4) -> 6 + 4 ==> 10
+  // 10 -> (10, 5) -> 10 + 5 ==>15
+  @Test
+  public void reducePubTest() {
+
+    Publisher<Integer> pub = iterPub(Stream.iterate(1, a->a+1).limit(10).collect(Collectors.toList()) );
+    Publisher<Integer> reducePub = reducePub(pub, 0, (a, b) -> a + b);
+    reducePub.subscribe(logSub());
+  }
+
+  private Publisher<Integer> reducePub(Publisher<Integer> pub, int init, BiFunction<Integer, Integer, Integer> bf) {
+    return new Publisher<Integer>() {
+      @Override
+      public void subscribe(Subscriber<? super Integer> sub) {
+        pub.subscribe(new DelegateSub(sub) {
+          int result = init;
+
+          @Override
+          public void onNext(Integer i) {
+            result = bf.apply(result, i);
+          }
+
+          @Override
+          public void onComplete() {
+            sub.onNext(result);
+            sub.onComplete();
+          }
+        });
+      }
     };
   }
 }

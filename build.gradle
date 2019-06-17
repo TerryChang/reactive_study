@@ -3,6 +3,8 @@ plugins {
     id 'io.spring.dependency-management' version '1.0.6.RELEASE'
 }
 
+apply plugin: 'io.spring.dependency-management'
+
 group 'com.terry'
 version '1.0-SNAPSHOT'
 
@@ -10,6 +12,15 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+}
+
+// lombok을 src/test에 있는 class에 사용하는 과정에서 lombok을 compileOnly로 설정하였는데..
+// lombok을 dependency에서는 잘 가져왔으나 정작 src/test에 class source 에서는 import가 안되는 상황이 발행하였다.
+// 원인을 검색해보니 compileOnly는 의존성이 test로 전달이 되지 않기 때문에 test시에는 testCompile로 하거나 또는 아래의 설정과 같이 강제로 이행처리가 되게끔 해야 한다고 되어 있었다
+// 관련 내용은 http://kwonnam.pe.kr/wiki/gradle/dependencies 참조
+sourceSets {
+    test.compileClasspath += configurations.compileOnly
+    test.runtimeClasspath += configurations.compileOnly
 }
 
 dependencyManagement {
