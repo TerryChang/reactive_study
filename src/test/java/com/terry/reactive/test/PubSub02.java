@@ -1,7 +1,9 @@
 package com.terry.reactive.test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -12,6 +14,7 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
 
 @Slf4j
 public class PubSub02 {
@@ -383,5 +386,189 @@ public class PubSub02 {
         });
       }
     };
+  }
+
+  /**
+   * DelegateSub 클래스를 Generic을 사용한 버전인 GenericDelegateSub 클래스로 새로이 만들어서 이를 적용한 테스트
+   * genericPub 메소드는 위에서 만든 mapPub 메소드를 GenericDelegateSub 클래스를 사용한 버전으로 바꾸어서 제작
+   */
+  @Test
+  public void genericPubTest() {
+
+    Publisher<Integer> pub = iterPub(Stream.iterate(1, a->a+1).limit(10).collect(Collectors.toList()) );
+    Publisher<Integer> mapPub = genericPub(pub, s -> s * 10);
+    mapPub.subscribe(genericLogSub());
+  }
+
+  private <T> Publisher<T> genericPub(Publisher<T> pub, Function<T, T> f) {
+    // TODO Auto-generated method stub
+    return new Publisher<T>() {
+      @Override
+      public void subscribe(Subscriber<? super T> sub) {
+        pub.subscribe(new GenericDelegateSub<T>(sub){
+          @Override
+          public void onNext(T t) {
+            sub.onNext(f.apply(t));
+          }
+        });
+      }
+    };
+  }
+
+  /*
+  Subscriber를 만들어주는 logSub 메소드를 Generic을 사용한 버전으로 만듬
+   */
+  private <T> Subscriber<T> genericLogSub() {
+    return new Subscriber<T>() {
+
+      @Override
+      public void onSubscribe(Subscription s) {
+        // TODO Auto-generated method stub
+        logger.debug("onSubscribe");
+        s.request(Long.MAX_VALUE); // Publisher가 가지고 있는 데이터를 전부 받겠다(분할로 받는 것이 아님)
+      }
+
+      @Override
+      public void onNext(T i) {
+        // TODO Auto-generated method stub
+        logger.debug("onNext : {}", i);
+
+      }
+
+      @Override
+      public void onError(Throwable t) {
+        // TODO Auto-generated method stub
+        logger.debug("onError : {}", t);
+      }
+
+      @Override
+      public void onComplete() {
+        // TODO Auto-generated method stub
+        logger.debug("onComplete");
+      }
+
+    };
+  }
+
+  /**
+   * DelegateSub 클래스를 Generic을 사용한 버전인 GenericDelegateSub 클래스로 새로이 만들어서 이를 적용한 테스트
+   * genericPub 메소드는 위에서 만든 mapPub 메소드를 GenericDelegateSub 클래스를 사용한 버전으로 바꾸어서 제작
+   */
+  @Test
+  public void multipleGenericPubTest() {
+
+    Publisher<Integer> pub = iterPub(Stream.iterate(1, a->a+1).limit(10).collect(Collectors.toList()) );
+    // Publisher<String> mapPub = multipleGenericPub(pub, s -> "[ " + s + " ]");
+    // List 타입으로 받고 싶을때는 아래와 같이 한다
+    // Publisher<List> mapPub = multipleGenericPub(pub, s -> Collections.singletonList(s));
+    // mapPub.subscribe(genericLogSub());
+
+    // 문자열을 결합해서 return 하는 Publisher 테스트
+    // Publisher<String> reducePub = reduceStringPub(pub, "", (a, b) -> a + ", " + b);
+    // reducePub.subscribe(genericLogSub());
+
+    // 문자열 대신 StringBuilder 클래스를 이용해서 문자열을 생성해서 하는 테스트
+    Publisher<StringBuilder> reducePub = reduceStringPub(pub, new StringBuilder(), (a, b) -> a.append(b + ", "));
+    reducePub.subscribe(genericLogSub());
+
+
+  }
+  /*
+  genericPub 메소드가 1개의 Generic 타입만 가지고 사용하는 것이라면
+  multipleGenericPub 메소드는 2개의 Generic 타입을 가지고 사용하는 것이라 보면 된다
+  즉 입력 데이터 타입과 return 되는 출력 데이터 타입이 동일했었다면 genericPub 메소드를 이용해서 하면 되지만
+  입력 데이터 타입과 return 되는 출력 데이터 타입이 다르다면 multipleGenericPub 메소드를 사용하게 된다
+  입력 데이터 타입과 return 되는 출력 데이터 타입이 같더라도 multipleGenericPub를 사용할 수 있다
+  설정시에 입력 데이터 타입과 출력 데이터 타입을 같게 주면 되기 때문이다
+
+  이를 위해 기존의 GenericDelegateSub 클래스를 수정한 MultipleGenericDelegateSub 클래스를 새로 제작했다
+   */
+  private <T,R> Publisher<R> multipleGenericPub(Publisher<T> pub, Function<T,R> f) {
+    // TODO Auto-generated method stub
+    return new Publisher<R>() {
+      @Override
+      public void subscribe(Subscriber<? super R> sub) {
+        pub.subscribe(new MultipleGenericDelegateSub<T,R>(sub){
+          @Override
+          public void onNext(T t) {
+            sub.onNext(f.apply(t));
+          }
+        });
+      }
+    };
+  }
+
+  /*
+  private Publisher<String> reduceStringPub(Publisher<Integer> pub, String init, BiFunction<String, Integer, String> bf) {
+    return new Publisher<String>() {
+      @Override
+      public void subscribe(Subscriber<? super String> sub) {
+        pub.subscribe(new MultipleGenericDelegateSub<Integer, String>(sub) {
+          String result = init;
+
+          @Override
+          public void onNext(Integer i) {
+            result = bf.apply(result, i);
+          }
+
+          @Override
+          public void onComplete() {
+            sub.onNext(result);
+            sub.onComplete();
+          }
+        });
+      }
+    };
+  }
+  */
+
+  /*
+  위의 메소드는 reducePub 메소드를 활용하여 원래 Publisher가 제공하는 Integer 값들을 문자열 결합을 하여 최종 문자열을 return 하는 메소드이다.
+  이것을 Generic으로 표기를 바꾼게 아래와 같은 메소드이다.
+  이처럼 Generic 메소드로 변형하고자 할때는 먼저 구체적인 타입으로 하나를 만든뒤에 그걸 이용해서 해당 타입에 대응되는 Generic 기호를 써가며 만들면 쉽다
+   */
+  private <T, R> Publisher<R> reduceStringPub(Publisher<T> pub, R init, BiFunction<R, T, R> bf) {
+    return new Publisher<R>() {
+      @Override
+      public void subscribe(Subscriber<? super R> sub) {
+        pub.subscribe(new MultipleGenericDelegateSub<T, R>(sub) {
+          R result = init;
+
+          @Override
+          public void onNext(T i) {
+            result = bf.apply(result, i);
+          }
+
+          @Override
+          public void onComplete() {
+            sub.onNext(result);
+            sub.onComplete();
+          }
+        });
+      }
+    };
+  }
+
+  /*
+  Spring에서 제공하는 Reactor를 이용해서 Publisher, Subscriber를 구현한 테스트
+  Flux 클래스가 Publisher 역할을 하고 subscribe 메소드에 들어가는 객체가 Subscriber 역할을 하게 된다
+  여기서 subscribe 메소드를 보면 파라미터로 들어가는 타입이 2개가 존재한다
+  하나는 우리가 이제껏 사용했던 Subscriber 인터페이스를 그대로 사용할 수 있다.
+  또 다른 하나는 Consumer 클래스로 Subscriber의 관심사(onSubscribe, onNext, onError, onComplete) 별로 객체화해서 만들수가 있다
+  즉 onNext 메소드에 대응되는 Consumer 클래스 객체, onError 메소드에 대응되는 Consumer 클래스 객체 이런 식이다
+  또한 이 객체는 결국 관심사에 해당하는 메소드 하나만 만들수 있기 때문에 람다식으로의 구현도 가능하다
+   */
+  @Test
+  public void reactorex() {
+    Flux.<Integer>create(e -> {
+      e.next(1);
+      e.next(2);
+      e.next(3);
+      e.complete();
+    })
+            .log()
+            .map(s -> s*10)
+            .log()
+            .subscribe(s -> logger.info(String.valueOf(s)));
   }
 }

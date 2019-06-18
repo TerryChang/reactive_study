@@ -1,7 +1,5 @@
 package com.terry.reactive.test;
 
-import java.util.function.Function;
-
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
