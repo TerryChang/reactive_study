@@ -1,4 +1,4 @@
-package com.terry.reactive.test;
+package com.terry.reactive.test.day02;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
