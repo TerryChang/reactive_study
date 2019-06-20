@@ -11,6 +11,7 @@ version '1.0-SNAPSHOT'
 sourceCompatibility = 1.8
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
@@ -30,6 +31,7 @@ dependencyManagement {
 }
 
 dependencies {
+    compile 'org.springframework:spring-context:5.1.7.RELEASE'
     compile 'io.projectreactor:reactor-core'
     compile 'org.slf4j:slf4j-api:1.7.26'
     compile 'ch.qos.logback:logback-classic:1.2.3'
