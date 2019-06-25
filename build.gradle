@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'org.springframework.boot' version '2.1.5.RELEASE'
     id 'io.spring.dependency-management' version '1.0.6.RELEASE'
 }
 
@@ -19,23 +20,25 @@ repositories {
 // lombok을 dependency에서는 잘 가져왔으나 정작 src/test에 class source 에서는 import가 안되는 상황이 발행하였다.
 // 원인을 검색해보니 compileOnly는 의존성이 test로 전달이 되지 않기 때문에 test시에는 testCompile로 하거나 또는 아래의 설정과 같이 강제로 이행처리가 되게끔 해야 한다고 되어 있었다
 // 관련 내용은 http://kwonnam.pe.kr/wiki/gradle/dependencies 참조
-sourceSets {
+/*sourceSets {
     test.compileClasspath += configurations.compileOnly
     test.runtimeClasspath += configurations.compileOnly
-}
+}*/
 
-dependencyManagement {
-    imports {
-        mavenBom 'io.projectreactor:reactor-bom:Bismuth-RELEASE'
-    }
-}
+//dependencyManagement {
+//    imports {
+//        mavenBom 'io.projectreactor:reactor-bom:Bismuth-RELEASE'
+//    }
+//}
 
 dependencies {
-    compile 'org.springframework:spring-context:5.1.7.RELEASE'
-    compile 'io.projectreactor:reactor-core'
-    compile 'org.slf4j:slf4j-api:1.7.26'
-    compile 'ch.qos.logback:logback-classic:1.2.3'
-    compileOnly 'org.projectlombok:lombok:1.18.8'
+    implementation 'org.springframework.boot:spring-boot-devtools'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    // compile 'org.springframework:spring-context:5.1.7.RELEASE'
+    implementation 'io.projectreactor:reactor-core'
+    implementation 'org.slf4j:slf4j-api:1.7.26'
+    implementation 'ch.qos.logback:logback-classic:1.2.3'
+    implementation 'org.projectlombok:lombok:1.18.8'
     annotationProcessor 'org.projectlombok:lombok:1.18.8'
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
